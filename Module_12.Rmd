@@ -1,0 +1,445 @@
+---
+title: "Module_12"
+author: "Wesley Newcomb"
+date: "2023-04-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Install devtools package: allows installations from GitHub
+install.packages("devtools")
+
+# Install "fueleconomy" dataset from GitHub
+devtools::install_github("hadley/fueleconomy")
+
+# Use the `libary()` function to load the "fueleconomy" package
+library(fueleconomy)
+```
+
+
+```{r ex1 echo=FALSE}
+# Exercise 1: working with data frames (review)
+
+# Install devtools package: allows installations from GitHub
+#install.packages("devtools")
+
+# Install "fueleconomy" dataset from GitHub
+#devtools::install_github("hadley/fueleconomy")
+
+# Use the `libary()` function to load the "fueleconomy" package
+#library(fueleconomy)
+
+# You should now have access to the `vehicles` data frame
+# You can use `View()` to inspect it
+makes <- vehicles$manufacturer
+
+# Select the different manufacturers (makes) of the cars in this data set. 
+# Save this vector in a variable
+makes <- vehicles$manufacturer
+
+# Use the `unique()` function to determine how many different car manufacturers
+# are represented by the data set
+num_makes <- length(unique(makes))
+
+# Filter the data set for vehicles manufactured in 1997
+vehicles_1997 <- vehicles %>% filter(year == 1997) 
+
+# Arrange the 1997 cars by highway (`hwy`) gas mileage
+# Hint: use the `order()` function to get a vector of indices in order by value
+# See also:
+# https://www.r-bloggers.com/r-sorting-a-data-frame-by-the-contents-of-a-column/
+vehicles_1997_ordered <- vehicles_1997[order(vehicles_1997$hwy), ]
+
+# Mutate the 1997 cars data frame to add a column `average` that has the average
+# gas milage (between city and highway mpg) for each car
+vehicles_1997_avg <- vehicles_1997 %>% mutate(average = (cty + hwy) / 2)
+
+# Filter the whole vehicles data set for 2-Wheel Drive vehicles that get more
+# than 20 miles/gallon in the city. 
+# Save this new data frame in a variable.
+vehicles_filtered <- vehicles %>% filter(drive == "2" & cty > 20)
+
+# Of the above vehicles, what is the vehicle ID of the vehicle with the worst 
+# hwy mpg?
+# Hint: filter for the worst vehicle, then select its ID.
+worst_vehicle_id <- vehicles_filtered %>% filter(hwy == min(hwy)) %>% select(id)
+
+# Write a function that takes a `year_choice` and a `make_choice` as parameters, 
+# and returns the vehicle model that gets the most hwy miles/gallon of vehicles 
+# of that make in that year.
+# You'll need to filter more (and do some selecting)!
+most_efficient_model <- function(year_choice, make_choice) {
+  vehicles %>% 
+    filter(year == year_choice & manufacturer == make_choice) %>% 
+    arrange(desc(hwy)) %>% 
+    select(model) %>% 
+    slice(1)
+}
+
+# What was the most efficient Honda model of 1995?
+most_efficient_honda_1995 <- most_efficient_model(1995, "honda")
+
+```
+```{r ex2, echo=FALSE}
+# Exercise 2: working with `dplyr`
+# Note that this exercise repeats the analysis from Exercise 1, but should be 
+# performed using `dplyr` (do not directly access or manipulate the data frames)
+
+# Install and load the "fueleconomy" package
+#install.packages("devtools")
+#devtools::install_github("hadley/fueleconomy")
+library(fueleconomy)
+
+# Install and load the "dplyr" library
+install.packages("dplyr")
+library(dplyr)
+
+# Select the different manufacturers (makes) of the cars in this data set. 
+# Save this vector in a variable
+makes <- vehicles$manufacturer
+
+# Use the `distinct()` function to determine how many different car manufacturers
+# are represented by the data set
+num_makes <- vehicles %>% distinct(manufacturer) %>% nrow()
+
+# Filter the data set for vehicles manufactured in 1997
+vehicles_1997 <- vehicles %>% filter(year == 1997)
+
+# Arrange the 1997 cars by highway (`hwy`) gas milage
+vehicles_1997_ordered <- vehicles_1997 %>% arrange(hwy)
+
+# Mutate the 1997 cars data frame to add a column `average` that has the average
+# gas milage (between city and highway mpg) for each car
+vehicles_1997_avg <- vehicles_1997 %>% mutate(average = (cty + hwy) / 2)
+
+# Filter the whole vehicles data set for 2-Wheel Drive vehicles that get more
+# than 20 miles/gallon in the city. 
+# Save this new data frame in a variable.
+vehicles_filtered <- vehicles %>% filter(drive == "2" & cty > 20)
+
+# Of the above vehicles, what is the vehicle ID of the vehicle with the worst 
+# hwy mpg?
+# Hint: filter for the worst vehicle, then select its ID.
+worst_vehicle_id <- vehicles_filtered %>% filter(hwy == min(hwy)) %>% select(id)
+
+# Write a function that takes a `year_choice` and a `make_choice` as parameters,
+# and returns the vehicle model that gets the most hwy miles/gallon of vehicles 
+# of that make in that year.
+# You'll need to filter more (and do some selecting)!
+most_efficient_model <- function(year_choice, make_choice) {
+  vehicles %>% 
+    filter(year == year_choice & manufacturer == make_choice) %>% 
+    arrange(desc(hwy)) %>% 
+    select(model) %>% 
+    slice(1)
+}
+
+# What was the most efficient Honda model of 1995?
+most_efficient_honda_1995 <- most_efficient_model(1995, "honda")
+```
+
+```{r ex3, echo=FALSE}
+# Exercise 3: using the pipe operator
+
+# Install (if needed) and load the "dplyr" library
+#install.packages("dplyr")
+library("dplyr")
+
+# Install (if needed) and load the "fueleconomy" package
+#install.packages('devtools')
+#devtools::install_github("hadley/fueleconomy")
+library("fueleconomy")
+
+# Which 2015 Acura model has the best hwy MGH? (Use dplyr, but without method
+# chaining or pipes--use temporary variables!)
+# Approach 1: Using temporary variables
+acura_2015 <- vehicles %>% filter(year == 2015 & manufacturer == "acura")
+acura_2015_ordered <- acura_2015 %>% arrange(desc(hwy))
+best_acura_2015 <- acura_2015_ordered %>% slice(1) %>% select(model)
+
+# Which 2015 Acura model has the best hwy MPG? (Use dplyr, nesting functions)
+# Approach 2: Nesting functions
+best_acura_2015 <- vehicles %>% 
+  filter(year == 2015 & manufacturer == "acura") %>% 
+  arrange(desc(hwy)) %>% 
+  slice(1) %>% 
+  select(model)
+
+# Which 2015 Acura model has the best hwy MPG? (Use dplyr and the pipe operator)
+# Approach 3: Using the pipe operator
+best_acura_2015 <- vehicles %>%
+  filter(year == 2015 & manufacturer == "acura") %>%
+  arrange(desc(hwy)) %>%
+  slice(1) %>%
+  select(model)
+
+
+### Bonus
+
+# Write 3 functions, one for each approach.  Then,
+# Test how long it takes to perform each one 1000 times
+# Bonus: Define functions for each approach
+best_acura_1 <- function() {
+  acura_2015 <- vehicles %>% filter(year == 2015 & manufacturer == "acura")
+  acura_2015_ordered <- acura_2015 %>% arrange(desc(hwy))
+  best_acura_2015 <- acura_2015_ordered %>% slice(1) %>% select(model)
+}
+
+best_acura_2 <- function() {
+  vehicles %>% 
+    filter(year == 2015 & manufacturer == "acura") %>% 
+    arrange(desc(hwy)) %>% 
+    slice(1) %>% 
+    select(model)
+}
+
+best_acura_3 <- function() {
+  vehicles %>%
+    filter(year == 2015 & manufacturer == "acura") %>%
+    arrange(desc(hwy)) %>%
+    slice(1) %>%
+    select(model)
+}
+
+# Test performance of each function
+library(microbenchmark)
+microbenchmark(best_acura_1(), best_acura_2(), best_acura_3(), times = 1000)
+```
+
+
+```{r ex4, echo=FALSE}
+# Exercise 4: practicing with dplyr
+
+# Install the `"nycflights13"` package. Load (`library()`) the package.
+# You'll also need to load `dplyr`
+# Install and load nycflights13 and dplyr packages
+install.packages("nycflights13")
+library(nycflights13)
+library(dplyr)
+
+# The data frame `flights` should now be accessible to you.
+# Use functions to inspect it: how many rows and columns does it have?
+# What are the names of the columns?
+# Use `??flights` to search for documentation on the data set (for what the 
+# columns represent)
+# Inspect flights data frame
+dim(flights)
+names(flights)
+
+# Use `dplyr` to give the data frame a new column that is the amount of time
+# gained or lost while flying (that is: how much of the delay arriving occured
+# during flight, as opposed to before departing).
+# Add column for time gained or lost during flight
+flights_gain <- flights %>% mutate(gain_in_air = arr_delay - dep_delay)
+
+# Use `dplyr` to sort your data frame in descending order by the column you just
+# created. Remember to save this as a variable (or in the same one!)
+# Sort data frame by gain_in_air column
+flights_gain_sorted <- flights_gain %>% arrange(desc(gain_in_air))
+
+# For practice, repeat the last 2 steps in a single statement using the pipe
+# operator. You can clear your environmental variables to "reset" the data frame
+# Repeat last two steps using pipe operator
+flights_gain_sorted <- flights %>%
+  mutate(gain_in_air = arr_delay - dep_delay) %>%
+  arrange(desc(gain_in_air))
+
+# Make a histogram of the amount of time gained using the `hist()` function
+# Create histogram of time gained
+hist(flights_gain_sorted$gain_in_air)
+
+# On average, did flights gain or lose time?
+# Note: use the `na.rm = TRUE` argument to remove NA values from your aggregation
+# Compute average time gained or lost
+mean(flights_gain_sorted$gain_in_air, na.rm = TRUE)
+
+# Create a data.frame of flights headed to SeaTac ('SEA'), only including the
+# origin, destination, and the "gain_in_air" column you just created
+# Create data frame of flights to SeaTac
+sea_flights <- flights_gain_sorted %>% 
+  filter(dest == "SEA") %>% 
+  select(origin, dest, gain_in_air)
+
+# On average, did flights to SeaTac gain or loose time?
+# Compute average time gained or lost for flights to SeaTac
+mean(sea_flights$gain_in_air, na.rm = TRUE)
+
+# Consider flights from JFK to SEA. What was the average, min, and max air time
+# of those flights? Bonus: use pipes to answer this question in one statement
+# (without showing any other data)!
+# Compute summary statistics for air time of JFK to SEA flights
+jfk_sea_flights <- flights %>% 
+  filter(origin == "JFK" & dest == "SEA") %>% 
+  summarise(avg_air_time = mean(air_time, na.rm = TRUE),
+            min_air_time = min(air_time, na.rm = TRUE),
+            max_air_time = max(air_time, na.rm = TRUE))
+```
+
+```{r ex5, echo=FALSE}
+# Exercise 5: dplyr grouped operations
+
+# Install the `"nycflights13"` package. Load (`library()`) the package.
+# You'll also need to load `dplyr`
+#install.packages("nycflights13")  # should be done already
+library("nycflights13")
+library("dplyr")
+
+# What was the average departure delay in each month?
+# Save this as a data frame `dep_delay_by_month`
+# Hint: you'll have to perform a grouping operation then summarizing your data
+# Compute average departure delay by month
+dep_delay_by_month <- flights %>% 
+  group_by(month) %>% 
+  summarise(avg_dep_delay = mean(dep_delay, na.rm = TRUE))
+
+# Which month had the greatest average departure delay?
+# Find month with greatest average departure delay
+dep_delay_by_month %>% 
+  filter(avg_dep_delay == max(avg_dep_delay)) %>% 
+  select(month)
+
+# If your above data frame contains just two columns (e.g., "month", and "delay"
+# in that order), you can create a scatterplot by passing that data frame to the
+# `plot()` function
+# Create scatterplot of average departure delay by month
+plot(dep_delay_by_month)
+
+# To which destinations were the average arrival delays the highest?
+# Hint: you'll have to perform a grouping operation then summarize your data
+# You can use the `head()` function to view just the first few rows
+# Find destinations with highest average arrival delays
+flights %>% 
+  group_by(dest) %>% 
+  summarise(avg_arr_delay = mean(arr_delay, na.rm = TRUE)) %>% 
+  arrange(desc(avg_arr_delay)) %>% 
+  head()
+
+# You can look up these airports in the `airports` data frame!
+# Find city flown to with highest average speed
+flights %>% 
+  mutate(speed = distance / air_time) %>% 
+  group_by(dest) %>% 
+  summarise(avg_speed = mean(speed, na.rm = TRUE)) %>% 
+  arrange(desc(avg_speed)) %>% 
+  slice(1) %>%
+  left_join(airports, by = c("dest" = "faa")) %>%
+  select(name)
+
+# Which city was flown to with the highest average speed?
+```
+
+```{r ex6, echo=FALSE}
+# Exercise 6: dplyr join operations
+
+# Install the `"nycflights13"` package. Load (`library()`) the package.
+# You'll also need to load `dplyr`
+#install.packages("nycflights13")  # should be done already
+library("nycflights13")
+library("dplyr")
+
+# Create a dataframe of the average arrival delays for each _destination_, then 
+# use `left_join()` to join on the "airports" dataframe, which has the airport
+# information
+# Which airport had the largest average arrival delay?
+# Compute average arrival delay by destination and join with airports data frame
+dest_arr_delay <- flights %>% 
+  group_by(dest) %>% 
+  summarise(avg_arr_delay = mean(arr_delay, na.rm = TRUE)) %>% 
+  left_join(airports, by = c("dest" = "faa"))
+
+# Find airport with largest average arrival delay
+dest_arr_delay %>% 
+  filter(avg_arr_delay == max(avg_arr_delay)) %>% 
+  select(name)
+
+# Create a dataframe of the average arrival delay for each _airline_, then use
+# `left_join()` to join on the "airlines" dataframe
+# Which airline had the smallest average arrival delay?
+# Compute average arrival delay by airline and join with airlines data frame
+airline_arr_delay <- flights %>% 
+  group_by(carrier) %>% 
+  summarise(avg_arr_delay = mean(arr_delay, na.rm = TRUE)) %>% 
+  left_join(airlines, by = "carrier")
+
+# Find airline with smallest average arrival delay
+airline_arr_delay %>% 
+  filter(avg_arr_delay == min(avg_arr_delay)) %>% 
+  select(name)
+```
+
+```{r avocade, echo=FALSE}
+# Exercise 1: analyzing avocado sales with the `tidyr` package
+
+# Load necessary packages (`tidyr`, `dplyr`, and `ggplot2`)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+
+# Set your working directory using the RStudio menu:
+# Session > Set Working Directory > To Source File Location
+#setwd("path/to/working/directory")
+
+# Load the `data/avocado.csv` file into a variable `avocados`
+# Make sure strings are *not* read in as factors
+avocados <- read.csv("./tidyr/data/avocado.csv", stringsAsFactors = FALSE)
+
+# To tell R to treat the `Date` column as a date (not just a string)
+# Redefine that column as a date using the `as.Date()` function
+# (hint: use the `mutate` function)
+avocados <- avocados %>% mutate(Date = as.Date(Date))
+
+# The file had some uninformative column names, so rename these columns:
+# `X4046` to `small_haas`
+# `X4225` to `large_haas`
+# `X4770` to `xlarge_haas`
+avocados <- avocados %>% rename(small_haas = X4046, large_haas = X4225, xlarge_haas = X4770)
+
+# The data only has sales for haas avocados. Create a new column `other_avos`
+# that is the Total.Volume minus all haas avocados (small, large, xlarge)
+avocados <- avocados %>% mutate(other_avos = Total.Volume - small_haas - large_haas - xlarge_haas)
+
+# To perform analysis by avocado size, create a dataframe `by_size` that has
+# only `Date`, `other_avos`, `small_haas`, `large_haas`, `xlarge_haas`
+by_size <- avocados %>% select(Date, other_avos, small_haas, large_haas, xlarge_haas)
+
+# In order to visualize this data, it needs to be reshaped. The four columns
+# `other_avos`, `small_haas`, `large_haas`, `xlarge_haas` need to be 
+# **gathered** together into a single column called `size`. The volume of sales
+# (currently stored in each column) should be stored in a new column called 
+# `volume`. Create a new dataframe `size_gathered` by passing the `by_size` 
+# data frame to the `gather()` function. `size_gathered` will only have 3 
+# columns: `Date`, `size`, and `volume`.
+size_gathered <- by_size %>% gather(key = size, value = volume, -Date)
+
+# Using `size_gathered`, compute the average sales volume of each size 
+# (hint, first `group_by` size, then compute using `summarize`)
+size_gathered %>% 
+  group_by(size) %>% 
+  summarize(avg_volume = mean(volume))
+
+# This shape also facilitates the visualization of sales over time
+# (how to write this code is covered in Chapter 16)
+ggplot(size_gathered) +
+  geom_smooth(mapping = aes(x = Date, y = volume, col = size), se = F) 
+
+# We can also investigate sales by avocado type (conventional, organic).
+# Create a new data frame `by_type` by grouping the `avocados` dataframe by
+# `Date` and `type`, and calculating the sum of the `Total.Volume` for that type
+# in that week (resulting in a data frame with 2 rows per week).
+by_type <- avocados %>% 
+  group_by(Date, type) %>% 
+  summarize(total_volume = sum(Total.Volume))
+
+# To make a (visual) comparison of conventional versus organic sales, you 
+# need to **spread** out the `type` column into two different columns. Create a 
+# new data frame `by_type_wide` by passing the `by_type` data frame to 
+# the `spread()` function!
+by_type_wide <- by_type %>% spread(key = type, value = total_volume)
+
+# Now you can create a scatterplot comparing conventional to organic sales!
+# (how to write this code is covered in Chapter 16)
+ggplot(by_type_wide) +
+  geom_point(mapping = aes(x = conventional, y = organic, color = Date)) 
+
+```
